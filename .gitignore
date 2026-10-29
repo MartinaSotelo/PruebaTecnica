@@ -1,0 +1,16 @@
+# Entorno virtual de Python
+.venv/
+venv/
+ENV/
+
+# Caches y temporales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# Archivos de sesión temporales de SQLTools
+*.session.sql
+
+# Configuración local de IDE
+.vscode/
