@@ -141,11 +141,50 @@ El tracking de opinión pública se estructura en 6 tablas relacionales:
 
 ## 🤖 Transparencia en el Uso de Inteligencia Artificial
 
-De acuerdo con lo solicitado en la consigna:
+De acuerdo con lo solicitado explícitamente en la consigna, se detalla el uso de herramientas de inteligencia artificial durante el desarrollo de la prueba:
+
 - **Herramienta:** Asistente de IA (Antigravity / Gemini 3.8).
-- **Aplicación práctica:** Apoyo como herramienta de *pair-programming* para acelerar sintaxis repetitiva, configurar conexiones y optimizar visualizaciones bajo una ventana temporal de trabajo intensiva.
-- **Criterio propio y correcciones metodológicas:**
-  - **Rechazo de Regresión Logística:** Desestimación de la sugerencia inicial de la IA para optar por Árbol de Decisión y Random Forest, priorizando modelos dominados técnicamente por la postulante.
-  - **Tuning de hiperparámetros:** Decisión de no aceptar profundidades fijas y exigir una búsqueda con validación cruzada para justificar empíricamente la complejidad del modelo.
-  - **Línea de base de inercia electoral:** Elección de la persistencia de 2016 por sobre un clasificador mayoritario genérico.
-  - **Límites de los datos censales:** Rechazo de estimaciones externas de población para circunscribirse rigurosamente a las 430 jurisdicciones relevadas.
+- **Gestión eficiente del tiempo:** Utilizado como soporte estratégico de *pair-programming* para acelerar sintaxis repetitiva, configurar entornos y agilizar visualizaciones bajo una ventana temporal de trabajo intensiva. Esto permitió focalizar el esfuerzo analítico en la auditoría de datos, la formulación de hipótesis y el rigor metodológico.
+
+---
+
+### 1. Uso en el Ejercicio 2 (SQL sobre Base de Encuestas)
+
+#### A. ¿Para qué se utilizó?
+1. **Transición tecnológica de DuckDB a PostgreSQL remoto:**
+   - Habiendo trabajado previamente con DuckDB en entornos analíticos locales leyendo archivos `.csv`, utilicé la IA para profundizar en la arquitectura cliente-servidor de PostgreSQL en la nube (Neon), el rol de los conectores `psycopg2` y SQLAlchemy, y para diagnosticar particularidades de configuración (requisito de `sslmode=require` para conexiones remotas seguras y dialecto `postgresql+psycopg2://` en SQLAlchemy 2.0).
+2. **Consultoría y conceptualización de funciones avanzadas de SQL:**
+   - La IA explicó el funcionamiento de herramientas analíticas avanzadas: funciones de ventana (`ROW_NUMBER()` para deduplicación temporal según `registrada_en` y `LAG()` para variaciones inter-ola), creación de vistas reutilizables (`CREATE OR REPLACE VIEW`) y modularización mediante Common Table Expressions (CTEs con `WITH`).
+3. **Modelado visual (DER):**
+   - Estructuración de las 6 tablas y sus relaciones en formato nativo Markdown (`mermaid`).
+
+#### B. Momentos de criterio propio, correcciones y ajustes metodológicos:
+1. **Tratamiento metodológico del valor `edad = 999`:**
+   - Al detectar el código atípico `999` en la exploración inicial, evalué primero descartar esas filas. Sin embargo, al discutir las implicancias en sociología electoral, comprendí que esos encuestados completaron el cuestionario y cuentan con un factor de expansión válido (`ponderador`). Eliminarlos hubiera sesgado y reducido la muestra en intención de voto y aprobación. Decidí mantener a los individuos en la muestra y aislar el valor faltante únicamente para el cálculo de la media de edad mediante `NULLIF(edad, 999)`.
+2. **Cálculo de aprobación: porcentaje condicional vs. promedio:**
+   - En la Consulta 2 evalué inicialmente promediar la columna `valor`, pero al auditar las categorías (1=Aprueba, 2=Desaprueba, 99=Ns/Nc) identifiqué que un promedio numérico (`AVG`) carecía de sentido analítico y distorsionaría la métrica debido al código 99. Ajusté la lógica hacia un conteo condicional con `CASE WHEN` sobre el total de casos por región.
+3. **Formato de datos en Consulta 3 (Vertical vs. Pivot):**
+   - Mi idea inicial era presentar la intención de voto de forma horizontal con una columna por partido. Tras analizar que la Consulta 4 requería calcular rankings y variaciones inter-ola con funciones de ventana, acordamos mantener la query SQL en formato relacional vertical (estándar analítico en bases de datos) y realizar el pivoteo ejecutivo directamente en Pandas para la visualización.
+
+---
+
+### 2. Uso en el Ejercicio 1 (Machine Learning y Predicción Electoral)
+
+#### A. ¿Para qué se utilizó?
+1. **Aceleración de código y pipelines de scikit-learn:**
+   - Redacción ágil de la sintaxis de entrenamiento, métricas (`accuracy_score`, `roc_auc_score`, `f1_score`, matrices de confusión) y visualizaciones con `matplotlib` y `seaborn`.
+2. **Exploración de la estructura del dataset censal:**
+   - Asistencia en la interpretación del diccionario de variables de `meta_data.csv` y filtrado riguroso de variables con riesgo de *Data Leakage* (conteos directos de votos).
+
+#### B. Momentos de criterio propio, honestidad técnica y correcciones:
+1. **Selección honesta de modelos (Rechazo de Regresión Logística):**
+   - La IA sugirió inicialmente aplicar una Regresión Logística regularizada junto con Random Forest. Decidí **no incluir la regresión logística** porque todavía no la domino en profundidad a nivel de implementación e interpretación matemática, y preferí ser honesta con mis conocimientos en lugar de entregar un modelo generado por IA que no pudiera defender técnicamente en una entrevista. Opté por **Árbol de Decisión (`DecisionTreeClassifier`)** y **Random Forest (`RandomForestClassifier`)**, dos modelos cuya lógica entiendo y puedo fundamentar con solvencia.
+2. **Ajuste y validación de hiperparámetros (Tuning con Validación Cruzada):**
+   - Al notar que la IA fijaba valores de profundidad de forma directa, recordé mi experiencia previa con Árboles y KNN donde se prueban múltiples configuraciones. Solicité incorporar un barrido sistemático de profundidades con validación cruzada (`cross_val_score`) sobre Train para demostrar analíticamente por qué `max_depth=4` es el punto óptimo que balancea sesgo y varianza frente a árboles sobreajustados.
+3. **Definición de la Línea de Base (Inercia Electoral vs. Dummy Classifier):**
+   - Aunque la IA propuso un clasificador simple que siempre predijera la clase más frecuente, definí que la verdadera línea de base sociopolítica en elecciones estadounidenses es la **inercia electoral** (predecir en 2020 el ganador de 2016). Esto demostró que el 93.3% de los condados mantiene su preferencia y brindó una conclusión mucho más valiosa para el cliente.
+4. **Criterio sobre el alcance de los condados y población:**
+   - Al notar que el dataset solo incluía ~430 condados de más de 65.000 habitantes, decidí no hacer suposiciones ni estimaciones externas sobre qué porcentaje de la población total representaban (ya que el dataset no cuenta con una columna de población total). Preferí circunscribir el análisis estrictamente a los datos disponibles, documentando la omisión de los restantes condados y estados como una limitación concreta del modelo y dejándolo planteado como una línea de investigación futura para cruzar con datos censales de población.
+5. **Perspectiva institucional (Colegio Electoral):**
+   - Incorporé como oportunidad de mejora futura el entendimiento de las reglas del Colegio Electoral (*Winner-Take-All* a nivel estatal), señalando que ganar condados por amplia ventaja no suma electores y que el próximo paso del modelo debería ser agregar las predicciones a nivel estatal para apuntar al umbral de 270 electores.
+
